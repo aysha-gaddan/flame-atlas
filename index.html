@@ -1,0 +1,714 @@
+<title>Flame Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a ranked instrument list on the left (habitat presets, weights, filters, rows that open into evidence),
+   a reading column on the right (interpretation, ask, oxygen scale, gaps, Earth spin-offs). Flame-blue accent,
+   amber only for hazard. */
+:root {
+  --bg: #F2F4F7;
+  --surface: #FFFFFF;
+  --surface-2: #E8ECF2;
+  --ink: #101B2A;
+  --ink-2: #4A5668;
+  --line: #D2D9E3;
+  --flame: #1D5FD1;
+  --flame-soft: #DCE7FB;
+  --on-flame: #FFFFFF;
+  --heat: #B45309;
+  --heat-soft: #FBE8D2;
+  --font-display: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B121C;
+    --surface: #121C29;
+    --surface-2: #1A2638;
+    --ink: #E7EDF5;
+    --ink-2: #9AA8BA;
+    --line: #26354A;
+    --flame: #6AA2FF;
+    --flame-soft: #1A2D4F;
+    --on-flame: #08111F;
+    --heat: #F0A15A;
+    --heat-soft: #3A2A17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B121C;
+  --surface: #121C29;
+  --surface-2: #1A2638;
+  --ink: #E7EDF5;
+  --ink-2: #9AA8BA;
+  --line: #26354A;
+  --flame: #6AA2FF;
+  --flame-soft: #1A2D4F;
+  --on-flame: #08111F;
+  --heat: #F0A15A;
+  --heat-soft: #3A2A17;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+a { color: var(--flame); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; border-radius: 4px; }
+
+/* header */
+.top { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 28px; }
+.mark {
+  flex: none; width: 46px; height: 46px; border-radius: 50%; margin-top: 4px;
+  background: radial-gradient(circle at 38% 34%, var(--flame-soft) 0%, var(--flame) 62%, var(--ink) 130%);
+}
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 4px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 40px; line-height: 1.05; margin: 0 0 8px; letter-spacing: -.01em; }
+.lede { margin: 0; max-width: 62ch; color: var(--ink-2); font-size: 16px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0 0 10px; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 14px; margin: 0 0 6px; }
+
+/* controls */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 20px; display: grid; gap: 16px; }
+.label { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 6px; display: block; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--flame); border-color: var(--flame); color: var(--on-flame); }
+.note { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-2); max-width: 70ch; }
+.weights { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 18px; }
+.weights label { display: block; font-size: 13px; }
+.weights .wrow { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.weights input[type=range] { width: 100%; accent-color: var(--flame); }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; align-items: start; }
+.filters select, .filters input[type=search] {
+  width: 100%; font: inherit; font-size: 14px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;
+}
+.reset { font: inherit; font-size: 13px; background: none; border: none; color: var(--flame); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+
+/* layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 44px; align-items: start; }
+.count { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 6px; color: var(--ink-2); font-size: 13.5px; }
+
+/* ranked rows */
+ol.list { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 0 12px; padding: 16px 0; border-top: 1px solid var(--line); }
+.rank { color: var(--ink-2); font-size: 13px; padding-top: 6px; }
+.body { min-width: 0; }
+.line1 { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; }
+.namebtn {
+  font: inherit; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; flex: 1 1 260px;
+}
+.name { font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+.full { color: var(--ink-2); font-size: 14px; }
+.chev { font-family: var(--font-mono); color: var(--flame); width: 1.2em; text-align: center; }
+.score { display: flex; align-items: center; gap: 10px; flex: 0 1 170px; min-width: 130px; }
+.bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--flame); }
+.score b { font-size: 16px; min-width: 2.2ch; text-align: right; }
+.tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.tag { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; color: var(--ink-2); }
+.tag.need { background: var(--flame-soft); border-color: transparent; color: var(--ink); }
+.cmp { margin-left: auto; font-size: 13px; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.cmp input { accent-color: var(--flame); width: 15px; height: 15px; margin: 0; }
+.detail { margin-top: 14px; padding: 14px 0 2px; border-top: 1px dashed var(--line); display: grid; gap: 16px; }
+dl.facts { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px 16px; margin: 0; }
+dl.facts dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); padding-top: 3px; }
+dl.facts dd { margin: 0; max-width: 72ch; }
+dl.facts ul { margin: 0; padding-left: 18px; }
+.dims { display: grid; gap: 6px; max-width: 460px; }
+.dim { display: grid; grid-template-columns: 150px 70px auto; gap: 10px; align-items: center; font-size: 13.5px; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 18px; height: 6px; border-radius: 2px; background: var(--surface-2); display: block; }
+.pips i.on { background: var(--flame); }
+.src { font-size: 13px; color: var(--ink-2); }
+.empty { padding: 28px 0; color: var(--ink-2); }
+
+/* compare */
+.compare { margin-top: 28px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); min-width: 170px; }
+th:first-child, td:first-child { min-width: 110px; color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; }
+thead th { font-family: var(--font-display); font-size: 15px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+tr:last-child td { border-bottom: none; }
+
+/* aside */
+.block { border-top: 1px solid var(--line); padding-top: 14px; margin-bottom: 30px; }
+.block p { margin: 0 0 10px; font-size: 14.5px; }
+.block p:last-child { margin-bottom: 0; }
+.ask textarea {
+  width: 100%; min-height: 70px; resize: vertical; font: inherit; font-size: 14px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chips button { font: inherit; font-size: 12.5px; color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; cursor: pointer; text-align: left; }
+.btnrow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.btn { font: inherit; font-size: 14px; font-weight: 500; color: var(--on-flame); background: var(--flame); border: none; border-radius: 6px; padding: 7px 16px; cursor: pointer; }
+.btn.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { opacity: .55; cursor: default; }
+.answer { margin-top: 12px; white-space: pre-wrap; font-size: 14.5px; }
+.answer:empty { display: none; }
+.warn { margin: 6px 0 0; font-size: 13px; color: var(--heat); }
+svg.o2 { width: 100%; height: auto; display: block; }
+.o2 .ax { stroke: var(--line); stroke-width: 1; fill: none; }
+.o2 .tick { fill: var(--ink-2); font: 10.5px var(--font-mono); text-anchor: middle; }
+.o2 .lbl { fill: var(--ink-2); font: 11.5px var(--font-body); }
+.o2 .earth { fill: var(--ink); }
+.o2 .hot { fill: var(--heat-soft); stroke: var(--heat); stroke-width: 1; }
+.o2 .rng { fill: var(--flame); }
+.o2 .dotf { fill: var(--flame); }
+.o2 .suit { fill: var(--heat); }
+.cap { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+.spin { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.spin li { font-size: 14px; }
+.spin strong { font-weight: 600; }
+.planned { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+.planned li { font-size: 14px; border-left: 3px solid var(--heat); padding-left: 10px; }
+footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 13px; max-width: 90ch; }
+footer p { margin: 0 0 8px; }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .weights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  h1 { font-size: 32px; }
+  .filters { grid-template-columns: minmax(0, 1fr); }
+  dl.facts { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.facts dd { margin-bottom: 8px; }
+  .row { grid-template-columns: 28px minmax(0, 1fr); gap: 0 8px; }
+  .dim { grid-template-columns: 130px 64px auto; }
+  .mark { width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width .25s ease; }
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="mark" aria-hidden="true"></div>
+    <div>
+      <p class="kicker">NASA Space Apps 2026 · Flame in Freefall</p>
+      <h1>Flame Atlas</h1>
+      <p class="lede">Ranks NASA's microgravity combustion investigations by what they tell you about fire safety in a crew habitat. Choose the habitat, adjust the weights, and open any row to see why it sits where it does.</p>
+    </div>
+  </header>
+
+  <section class="panel" aria-label="Ranking controls">
+    <div>
+      <span class="label" id="lbl-habitat">Weight the ranking for</span>
+      <div class="seg" id="presets" role="group" aria-labelledby="lbl-habitat"></div>
+      <p class="note" id="presetNote"></p>
+    </div>
+    <div>
+      <span class="label">Scoring weights (0 to 5)</span>
+      <div class="weights" id="weights"></div>
+      <p class="note"><button type="button" class="reset" id="resetW">Reset to the selected habitat</button></p>
+    </div>
+    <div class="filters">
+      <div>
+        <label class="label" for="needSel">Fire-safety need</label>
+        <select id="needSel"></select>
+      </div>
+      <div>
+        <label class="label" for="fuelSel">Fuel</label>
+        <select id="fuelSel"></select>
+      </div>
+      <div>
+        <label class="label" for="search">Search</label>
+        <input type="search" id="search" placeholder="Name, hardware, objective">
+      </div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <main>
+      <p class="count"><span id="countTxt"></span><span>Rank is within the current filter</span></p>
+      <ol class="list" id="list"></ol>
+      <p class="note" id="emptyNote" hidden>No investigation matches these filters. Clear the search or set the need and fuel back to All.</p>
+      <section class="compare" id="compare" hidden aria-label="Comparison">
+        <h2>Side by side</h2>
+        <div class="tablewrap"><table id="cmpTable"></table></div>
+      </section>
+      <p class="note" id="cmpHint">Tick Compare on two or three investigations to set them side by side.</p>
+    </main>
+
+    <aside aria-label="Reading the ranking">
+      <section class="block" id="reading">
+        <h2>Reading this ranking</h2>
+        <div id="readingTxt"></div>
+      </section>
+
+      <section class="block ask" id="ask" hidden>
+        <h2>Ask the atlas</h2>
+        <p>Claude answers from the investigations, ratings and reference conditions on this page.</p>
+        <div class="chips" id="chips"></div>
+        <label class="label" for="q">Your question</label>
+        <textarea id="q" placeholder="Which investigation should I read first for a pressurized rover?"></textarea>
+        <div class="btnrow">
+          <button type="button" class="btn" id="askBtn">Ask</button>
+          <button type="button" class="btn ghost" id="stopBtn" hidden>Stop</button>
+        </div>
+        <p class="warn" id="askNote" role="status"></p>
+        <div class="answer" id="ans" aria-live="polite"></div>
+      </section>
+
+      <section class="block">
+        <h2>Oxygen on the scale</h2>
+        <svg class="o2" viewBox="0 0 360 206" role="img" aria-label="Oxygen concentration from 0 to 100 percent. Earth air is 21 percent. A Moon base is expected at 30 percent or more. SoFIE NCA tests span air to 85 percent. ACME CFI-G reached up to 85 percent. A spacesuit is 100 percent.">
+          <text class="lbl" x="10" y="16">Earth air · 21% · 14.7 psi</text>
+          <circle class="earth" cx="81.4" cy="29" r="5"/>
+          <text class="lbl" x="10" y="52">Moon base, expected · 30% or more · 10.2 psi or less</text>
+          <rect class="hot" x="112" y="59" width="238" height="10" rx="2"/>
+          <text class="lbl" x="10" y="88">SoFIE NCA · air to 85% · PMMA samples</text>
+          <rect class="rng" x="81.4" y="95" width="217.6" height="8" rx="2"/>
+          <text class="lbl" x="10" y="124">ACME CFI-G · up to 85% · highest microgravity test</text>
+          <circle class="dotf" cx="299" cy="137" r="5"/>
+          <text class="lbl" x="10" y="160">Spacesuit · 100% · 4.3 psi</text>
+          <circle class="suit" cx="350" cy="173" r="5"/>
+          <line class="ax" x1="10" y1="188" x2="350" y2="188"/>
+          <g class="ticks">
+            <line class="ax" x1="10" y1="188" x2="10" y2="193"/><text class="tick" x="10" y="204">0</text>
+            <line class="ax" x1="95" y1="188" x2="95" y2="193"/><text class="tick" x="95" y="204">25</text>
+            <line class="ax" x1="180" y1="188" x2="180" y2="193"/><text class="tick" x="180" y="204">50</text>
+            <line class="ax" x1="265" y1="188" x2="265" y2="193"/><text class="tick" x="265" y="204">75</text>
+            <line class="ax" x1="350" y1="188" x2="350" y2="193"/><text class="tick" x="344" y="204">100</text>
+          </g>
+        </svg>
+        <p class="cap">Oxygen only, in percent. Pressure differs by habitat. Compared with Earth air, 30% is more than 40% higher, which makes materials much more flammable.</p>
+      </section>
+
+      <section class="block">
+        <h2>Not in the data yet</h2>
+        <ul class="planned">
+          <li><strong>FM2</strong>, Flammability of Materials on the Moon: the first combustion experiment on another planetary body, at one-sixth gravity.</li>
+          <li><strong>LUCI</strong>, Lunar-g Combustion Investigation: expected to add partial-gravity results.</li>
+        </ul>
+        <p>No partial-gravity combustion data is in PSI today. Microgravity and normal-gravity results bound what happens at Moon gravity. The one proxy is ACME E-FIELD Flames, which mimics partial gravity with an electric field.</p>
+        <p>Rocket engines and propellants are outside this data: their combustion does not depend on gravity.</p>
+      </section>
+
+      <section class="block">
+        <h2>What it means on Earth</h2>
+        <ul class="spin">
+          <li><strong>Fine-water-mist extinguishers</strong> developed for the ISS are now used on Earth.</li>
+          <li><a href="https://spinoff.nasa.gov/node/9407" target="_blank" rel="noopener">Fire detector</a>: a 1970s shuttle smoke detector that tells smoke from dust, so it raises fewer nuisance alarms. It is used in mining.</li>
+          <li><a href="https://spinoff.nasa.gov/node/9582" target="_blank" rel="noopener">Firefighter air tanks</a>: 1970s spacesuit technology adapted for breathing gear.</li>
+          <li><a href="https://spinoff.nasa.gov/node/9918" target="_blank" rel="noopener">Firefighter clothing</a>: 1980s spacesuit technology applied to protective attire.</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <footer>
+    <p>Facts come from the Flame in Freefall challenge brief and the NASA pages linked in each row. Scores are analyst ratings from 0 to 3 of those descriptions, combined with the weights above. They are not NASA measurements. Where a source gave no value, the row says so.</p>
+    <p>Datasets: <a href="https://psi.nasa.gov/physci/repo/search?q=combustion" target="_blank" rel="noopener">PSI combustion repository</a> · <a href="https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/" target="_blank" rel="noopener">NASA Combustion Science</a> · <a href="https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/" target="_blank" rel="noopener">Researcher's Guide to Combustion Science</a>. Confirm which datasets each investigation has in PSI before you model with it.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var NS = 'Not stated in the sources reviewed. See the PSI datasets.';
+  var GLENN = 'https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/';
+  var NEEDS = { flammability: 'Flammability', detection: 'Detection', suppression: 'Suppression', modeling: 'Model validation' };
+  var FUELS = { solid: 'Solid', gas: 'Gas', liquid: 'Liquid droplet', aerosol: 'Smoke and dust' };
+  var DIMS = [
+    { k: 'h', label: 'Habitat relevance', short: 'habitat relevance' },
+    { k: 'a', label: 'Atmosphere match', short: 'atmosphere match' },
+    { k: 'm', label: 'Modeling value', short: 'modeling value' },
+    { k: 'c', label: 'Equipment impact', short: 'equipment impact' }
+  ];
+  var PRESETS = {
+    cabin: { label: 'Spacecraft or station', w: { h: 5, a: 2, m: 3, c: 3 }, note: 'Puts direct relevance to crew environments first, then modeling and equipment.' },
+    moon: { label: 'Moon base or rover', w: { h: 3, a: 5, m: 3, c: 3 }, note: 'A Moon base and pressurized rovers are expected at 30% oxygen or more and 10.2 psi or less, against 21% and 14.7 psi on Earth. This puts atmosphere match first.' },
+    equip: { label: 'Equipment developer', w: { h: 3, a: 2, m: 1, c: 5 }, note: 'Puts research that informs detection, suppression and protective equipment first.' },
+    model: { label: 'Model builder', w: { h: 2, a: 3, m: 5, c: 1 }, note: 'Puts data that supports predictive flammability and fire models first.' }
+  };
+
+  var DATA = [
+    {
+      id: 'saffire', name: 'Saffire-I, -II, -III', full: 'Spacecraft Fire Safety Demonstration',
+      needs: ['flammability'], fuel: ['solid'], r: { h: 3, a: 1, m: 2, c: 1 },
+      objective: 'Scaled-up fire-spread tests of solid materials such as fabrics and plastics, run in a spacecraft instead of a lab rack.',
+      fuelDesc: 'Solid materials such as fabrics and plastics',
+      conditions: NS, hardware: 'Northrop Grumman Cygnus spacecraft, after it leaves the station', measures: NS, earth: '',
+      src: { l: 'NASA SVS: NASA Studies Fire in Microgravity', u: 'https://svs.gsfc.nasa.gov/31394' }
+    },
+    {
+      id: 'bass', name: 'BASS, BASS-II', full: 'Burning and Suppression of Solids',
+      needs: ['flammability', 'suppression'], fuel: ['solid'], r: { h: 3, a: 1, m: 3, c: 2 },
+      objective: 'Burning and extinction behavior of a wide variety of solid fuel samples in microgravity.',
+      fuelDesc: 'Solid fuel samples of many kinds',
+      conditions: 'Airflow comes from a fan-driven duct. Oxygen level and flow speed drive flammability in microgravity (challenge brief). Exact values are in PSI.',
+      hardware: 'Microgravity Science Glovebox, using the fan-driven flow duct built for SPICE', measures: NS, earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'sofie', name: 'SoFIE', full: 'Solid Fuel Ignition and Extinction',
+      needs: ['flammability', 'suppression'], fuel: ['solid'], r: { h: 3, a: 3, m: 3, c: 2 },
+      objective: 'Five investigations of solid-surface combustion and material flammability. NASA-STD-6001 relies on a 1 g flame-propagation test that some researchers think is not conservative in low gravity.',
+      fuelDesc: 'Solid fuels: flat PMMA samples, a 4 to 5 cm sphere, cylindrical samples',
+      conditions: 'NCA tests ran from air up to 85% oxygen, with pressure varied to stay near the normoxic curve, at several flow speeds.',
+      hardware: 'Combustion Integrated Rack (CIR), ISS',
+      measures: 'Flame spread rate and extinction limits (NCA). How heating of the fuel interior changes flammability (GEL).',
+      parts: [
+        'RTDFS: steady and unsteady flame spread, and how fuel thickness limits it',
+        'NCA: flame spread over planar PMMA in forced opposed flow',
+        'GEL: growth and extinction on a thick, non-flat solid sphere',
+        'MIST: ignition and suppression on cylindrical samples with radiant heaters and an igniter',
+        'SMuRF: links normal-gravity flammability data to ventilated microgravity results'
+      ],
+      earth: '',
+      src: { l: 'NASA: SoFIE', u: GLENN + 'solid-fuel-ignition-and-extinction-sofie/' }
+    },
+    {
+      id: 'flare', name: 'FLARE', full: 'Flammability Limits At Reduced-g Experiment',
+      needs: ['flammability'], fuel: ['solid'], r: { h: 2, a: 1, m: 3, c: 1 },
+      objective: 'Correlate material flammability limits in normal gravity and microgravity, so microgravity limits can be estimated from ground data. The team spans JAXA, NASA, ESA, CNES, DLR and universities.',
+      fuelDesc: 'Materials (flammability limits)',
+      conditions: NS, hardware: NS, measures: 'Material flammability limits', earth: '',
+      src: { l: 'NASA: FLARE', u: GLENN + 'flammability-limits-at-reduced-g-experiment-flare/' }
+    },
+    {
+      id: 'same', name: 'SAME, SAME-R', full: 'Smoke Aerosol Measurement Experiment',
+      needs: ['detection'], fuel: ['aerosol'], r: { h: 3, a: 1, m: 1, c: 3 },
+      objective: 'Check how spacecraft smoke detectors respond to different smoke. Hydrocarbon fuels typically make soot. Plastics make droplets of recondensed polymer fragments.',
+      fuelDesc: 'Smoke from hydrocarbon fuels and plastics',
+      conditions: NS, hardware: NS, measures: 'Smoke aerosol particles, using a modified P-Trak instrument',
+      earth: 'NASA technology has improved terrestrial smoke detection (challenge brief).',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'daft', name: 'DAFT, DAFT-2', full: 'Dust and Aerosol Measurement Feasibility Test',
+      needs: ['detection'], fuel: ['aerosol'], r: { h: 1, a: 0, m: 0, c: 2 },
+      objective: 'Confirm that a modified P-Trak, a key part of SAME, works in microgravity. In DAFT the instrument detected dust instead of smoke.',
+      fuelDesc: 'Dust and aerosol particles',
+      conditions: NS, hardware: NS, measures: 'Dust and aerosol particles', earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'flex', name: 'FLEX, FLEX-2', full: 'Flame Extinguishment Experiment',
+      needs: ['suppression'], fuel: ['liquid'], r: { h: 2, a: 2, m: 2, c: 3 },
+      objective: 'Measure how well inert-gas suppressants work in microgravity, and get the most conservative estimate of the limiting oxygen index for steady combustion.',
+      fuelDesc: 'Burning droplets of liquid fuel',
+      conditions: 'The chamber atmosphere was diluted with carbon dioxide and with helium. Both suppress fire.',
+      hardware: 'Multi-user Droplet Combustion Apparatus (MDCA) in the CIR',
+      measures: 'Limiting oxygen index; effect of dilution gases', earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'cfi', name: 'CFI', full: 'Cool Flames Investigation',
+      needs: ['modeling'], fuel: ['liquid'], r: { h: 1, a: 1, m: 1, c: 0 },
+      objective: 'Cool-flame behavior of burning liquid fuel droplets.',
+      fuelDesc: 'Burning droplets of liquid fuel',
+      conditions: NS, hardware: 'Multi-user Droplet Combustion Apparatus (MDCA) in the CIR', measures: NS, earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'bre', name: 'ACME BRE', full: 'Burning Rate Emulator',
+      needs: ['flammability'], fuel: ['gas'], r: { h: 2, a: 1, m: 3, c: 1 },
+      objective: 'A materials-flammability study in still atmospheres, as a function of material properties, even though it burned gaseous fuel.',
+      fuelDesc: 'Gaseous fuel standing in for burning material',
+      conditions: 'Still atmospheres (no forced flow).', hardware: 'ACME modular hardware in the CIR', measures: NS, earth: '',
+      src: { l: 'Challenge brief, ACME', u: GLENN }
+    },
+    {
+      id: 'cfig', name: 'ACME CFI-G', full: 'Cool Flames Investigation with Gases',
+      needs: ['modeling'], fuel: ['gas'], r: { h: 1, a: 3, m: 2, c: 0 },
+      objective: 'Reached the highest oxygen concentrations of any microgravity combustion test, burning an inside-out flame.',
+      fuelDesc: 'Nitrogen mixed with a flammable gas such as propane',
+      conditions: 'An oxygen-nitrogen mix of up to 85% oxygen flowed from a spherical burner into the chamber.',
+      hardware: 'ACME modular hardware in the CIR', measures: NS, earth: '',
+      src: { l: 'Challenge brief, ACME', u: GLENN }
+    },
+    {
+      id: 'efield', name: 'ACME E-FIELD Flames', full: 'Electric-Field Effects on Laminar Diffusion Flames',
+      needs: ['modeling'], fuel: ['gas'], r: { h: 1, a: 1, m: 2, c: 0 },
+      objective: 'Mimic partial gravity. An electric field acts on the ions that occur naturally in flames. It is the closest proxy for Moon gravity in the current data.',
+      fuelDesc: 'Gaseous fuel in laminar diffusion flames',
+      conditions: NS, hardware: 'ACME modular hardware in the CIR', measures: NS, earth: '',
+      src: { l: 'Challenge brief, ACME', u: GLENN }
+    },
+    {
+      id: 'cld', name: 'ACME CLD Flame, s-Flame', full: 'Coflow Laminar Diffusion Flame; Spherical Diffusion Flames',
+      needs: ['modeling'], fuel: ['gas'], r: { h: 1, a: 0, m: 3, c: 0 },
+      objective: 'CLD Flame gave benchmark data at sooty and highly diluted extremes. s-Flame gave data on flame growth and extinction. Both improve computational models.',
+      fuelDesc: 'Gaseous fuels',
+      conditions: 'Sooty and highly diluted extremes (CLD Flame).', hardware: 'ACME modular hardware in the CIR', measures: NS, earth: '',
+      src: { l: 'Universe Today on ACME', u: 'https://www.universetoday.com/156351/fire-acts-strangely-in-microgravity-astronauts-have-lit-more-than-1500-fires-on-the-space-station-to-figure-out-why' }
+    },
+    {
+      id: 'spice', name: 'SPICE', full: 'Smoke Point In Co-flow Experiment',
+      needs: ['modeling'], fuel: ['gas'], r: { h: 1, a: 0, m: 2, c: 0 },
+      objective: 'Continues the study of what controls stability and extinction of jet diffusion flames, begun with Laminar Soot Processes on STS-94.',
+      fuelDesc: 'Gaseous jet diffusion flames',
+      conditions: NS, hardware: 'Microgravity Science Glovebox with the SPICE flow duct', measures: NS, earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    },
+    {
+      id: 'slice', name: 'SLICE', full: 'Structure & Liftoff In Combustion Experiment',
+      needs: ['modeling'], fuel: ['gas'], r: { h: 1, a: 0, m: 2, c: 0 },
+      objective: 'Studies coflow laminar diffusion flames, which are valuable because accurate numerical models exist for that configuration.',
+      fuelDesc: 'Gaseous coflow diffusion flames',
+      conditions: NS, hardware: 'Microgravity Science Glovebox with the SPICE flow duct', measures: NS, earth: '',
+      src: { l: 'NASA Combustion Science', u: GLENN }
+    }
+  ];
+
+  var S = { preset: 'moon', w: {}, need: 'all', fuel: 'all', q: '', cmp: [], open: {} };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var byId = {}; DATA.forEach(function (e) { byId[e.id] = e; });
+
+  function setPreset(key) {
+    S.preset = key;
+    DIMS.forEach(function (d) { S.w[d.k] = PRESETS[key].w[d.k]; });
+  }
+  function score(e, w) {
+    var tot = 0, got = 0;
+    DIMS.forEach(function (d) { tot += w[d.k] * 3; got += w[d.k] * e.r[d.k]; });
+    return tot ? Math.round(100 * got / tot) : 0;
+  }
+  function ranked(filtered) {
+    var out = DATA.filter(function (e) {
+      if (!filtered) return true;
+      if (S.need !== 'all' && e.needs.indexOf(S.need) < 0) return false;
+      if (S.fuel !== 'all' && e.fuel.indexOf(S.fuel) < 0) return false;
+      if (S.q) {
+        var hay = (e.name + ' ' + e.full + ' ' + e.objective + ' ' + e.hardware + ' ' + e.fuelDesc).toLowerCase();
+        if (hay.indexOf(S.q.toLowerCase()) < 0) return false;
+      }
+      return true;
+    }).map(function (e) { return { e: e, s: score(e, S.w) }; });
+    out.sort(function (a, b) { return b.s - a.s || a.e.name.localeCompare(b.e.name); });
+    return out;
+  }
+
+  /* controls */
+  function buildControls() {
+    var p = $('presets');
+    Object.keys(PRESETS).forEach(function (k) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = PRESETS[k].label; b.dataset.preset = k;
+      p.appendChild(b);
+    });
+    p.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-preset]'); if (!b) return;
+      setPreset(b.dataset.preset); syncControls(); render();
+    });
+    var w = $('weights');
+    DIMS.forEach(function (d) {
+      var l = document.createElement('label');
+      l.innerHTML = '<span class="wrow"><span>' + d.label + '</span><b class="mono" id="wv-' + d.k + '"></b></span>' +
+        '<input type="range" min="0" max="5" step="1" id="w-' + d.k + '">';
+      w.appendChild(l);
+      l.querySelector('input').addEventListener('input', function (ev) {
+        S.w[d.k] = +ev.target.value; S.preset = 'custom'; syncControls(); render();
+      });
+    });
+    $('resetW').addEventListener('click', function () { setPreset(S.preset === 'custom' ? 'moon' : S.preset); syncControls(); render(); });
+    var ns = $('needSel'); ns.innerHTML = '<option value="all">All needs</option>' + Object.keys(NEEDS).map(function (k) { return '<option value="' + k + '">' + NEEDS[k] + '</option>'; }).join('');
+    var fs = $('fuelSel'); fs.innerHTML = '<option value="all">All fuels</option>' + Object.keys(FUELS).map(function (k) { return '<option value="' + k + '">' + FUELS[k] + '</option>'; }).join('');
+    ns.addEventListener('change', function () { S.need = ns.value; render(); });
+    fs.addEventListener('change', function () { S.fuel = fs.value; render(); });
+    $('search').addEventListener('input', function (ev) { S.q = ev.target.value.trim(); render(); });
+  }
+  function syncControls() {
+    Array.prototype.forEach.call($('presets').children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.preset === S.preset)); });
+    $('presetNote').textContent = S.preset === 'custom' ? 'Custom weights. Pick a habitat to go back to a preset.' : PRESETS[S.preset].note;
+    DIMS.forEach(function (d) { $('w-' + d.k).value = S.w[d.k]; $('wv-' + d.k).textContent = S.w[d.k]; });
+  }
+
+  /* rows */
+  function pips(n) { var h = ''; for (var i = 0; i < 3; i++) h += '<i class="' + (i < n ? 'on' : '') + '"></i>'; return '<span class="pips" aria-hidden="true">' + h + '</span>'; }
+  function detailHTML(e) {
+    var parts = e.parts ? '<dt>Parts</dt><dd><ul>' + e.parts.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></dd>' : '';
+    var earth = e.earth ? '<dt>On Earth</dt><dd>' + esc(e.earth) + '</dd>' : '';
+    var dims = DIMS.map(function (d) {
+      return '<div class="dim"><span>' + d.label + '</span>' + pips(e.r[d.k]) + '<span class="mono">' + e.r[d.k] + '/3 × ' + S.w[d.k] + '</span></div>';
+    }).join('');
+    return '<dl class="facts">' +
+      '<dt>Objective</dt><dd>' + esc(e.objective) + '</dd>' +
+      '<dt>Fuel</dt><dd>' + esc(e.fuelDesc) + '</dd>' +
+      '<dt>Test conditions</dt><dd>' + esc(e.conditions) + '</dd>' +
+      '<dt>Hardware</dt><dd>' + esc(e.hardware) + '</dd>' +
+      '<dt>Measured</dt><dd>' + esc(e.measures) + '</dd>' + parts + earth +
+      '</dl>' +
+      '<div><h3>Why it ranks here</h3><div class="dims">' + dims + '</div></div>' +
+      '<p class="src">Source: <a href="' + esc(e.src.u) + '" target="_blank" rel="noopener">' + esc(e.src.l) + '</a></p>';
+  }
+  function rowHTML(item, i) {
+    var e = item.e, s = item.s, open = !!S.open[e.id], on = S.cmp.indexOf(e.id) >= 0;
+    return '<li class="row"><span class="rank mono">' + String(i + 1).padStart(2, '0') + '</span><div class="body">' +
+      '<div class="line1"><button type="button" class="namebtn" data-toggle="' + e.id + '" aria-expanded="' + open + '" aria-controls="d-' + e.id + '">' +
+      '<span class="name">' + esc(e.name) + '</span><span class="full">' + esc(e.full) + '</span><span class="chev" aria-hidden="true">' + (open ? '−' : '+') + '</span></button>' +
+      '<div class="score"><div class="bar"><i style="width:' + s + '%"></i></div><b class="mono" aria-label="Score ' + s + ' out of 100">' + s + '</b></div></div>' +
+      '<div class="tags">' + e.needs.map(function (n) { return '<span class="tag need">' + NEEDS[n] + '</span>'; }).join('') +
+      e.fuel.map(function (f) { return '<span class="tag">' + FUELS[f] + '</span>'; }).join('') +
+      '<label class="cmp"><input type="checkbox" data-cmp="' + e.id + '"' + (on ? ' checked' : '') + '> Compare</label></div>' +
+      '<div class="detail" id="d-' + e.id + '"' + (open ? '' : ' hidden') + '>' + detailHTML(e) + '</div></div></li>';
+  }
+
+  function render() {
+    var list = ranked(true);
+    $('list').innerHTML = list.map(rowHTML).join('');
+    $('emptyNote').hidden = list.length > 0;
+    $('countTxt').textContent = 'Showing ' + list.length + ' of ' + DATA.length + ' ranked investigations';
+    renderReading(list);
+    renderCompare();
+  }
+
+  /* interpretation */
+  function renderReading(list) {
+    var el = $('readingTxt');
+    var all = ranked(false);
+    var top = all[0];
+    var label = S.preset === 'custom' ? 'Your custom weights' : 'The "' + PRESETS[S.preset].label + '" weights';
+    var html = '';
+    if (!top || top.s === 0) {
+      html = '<p>Every weight is zero, so nothing can be ranked. Raise at least one weight.</p>';
+    } else {
+      var strong = DIMS.filter(function (d) { return S.w[d.k] > 0 && top.e.r[d.k] >= 2; })
+        .sort(function (a, b) { return S.w[b.k] * top.e.r[b.k] - S.w[a.k] * top.e.r[a.k]; })
+        .slice(0, 2).map(function (d) { return d.short; });
+      html += '<p>' + label + ' put <strong>' + esc(top.e.name) + '</strong> first of all ' + DATA.length + ', at ' + top.s + ' out of 100' +
+        (strong.length ? ', mainly on ' + strong.join(' and ') : '') + '.</p>';
+      var best = Object.keys(NEEDS).map(function (n) {
+        var hit = all.filter(function (x) { return x.e.needs.indexOf(n) >= 0; })[0];
+        return hit ? NEEDS[n] + ': ' + esc(hit.e.name) : null;
+      }).filter(Boolean);
+      html += '<p>Best by need. ' + best.join(' · ') + '.</p>';
+      if (list.length >= 2) {
+        var spread = list[0].s - list[list.length - 1].s;
+        html += '<p>In the current view, first and last are ' + spread + ' points apart. The order depends on the weights, so try another habitat above.</p>';
+      }
+    }
+    html += '<p>Moon conditions are covered only indirectly: there is no partial-gravity combustion data in PSI yet.</p>';
+    el.innerHTML = html;
+  }
+
+  /* compare */
+  function renderCompare() {
+    var sel = S.cmp.map(function (id) { return byId[id]; });
+    $('compare').hidden = sel.length < 2;
+    $('cmpHint').hidden = sel.length >= 2;
+    if (sel.length < 2) return;
+    var rows = [
+      ['Score', function (e) { return score(e, S.w) + ' / 100'; }],
+      ['Needs', function (e) { return e.needs.map(function (n) { return NEEDS[n]; }).join(', '); }],
+      ['Fuel', function (e) { return e.fuelDesc; }],
+      ['Objective', function (e) { return e.objective; }],
+      ['Conditions', function (e) { return e.conditions; }],
+      ['Hardware', function (e) { return e.hardware; }],
+      ['Measured', function (e) { return e.measures; }]
+    ];
+    var h = '<thead><tr><th scope="col">Attribute</th>' + sel.map(function (e) { return '<th scope="col">' + esc(e.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function (r) { h += '<tr><td>' + r[0] + '</td>' + sel.map(function (e) { return '<td>' + esc(r[1](e)) + '</td>'; }).join('') + '</tr>'; });
+    $('cmpTable').innerHTML = h + '</tbody>';
+  }
+
+  $('list').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-toggle]'); if (!b) return;
+    var id = b.dataset.toggle, d = $('d-' + id), open = d.hidden;
+    d.hidden = !open; S.open[id] = open;
+    b.setAttribute('aria-expanded', String(open));
+    b.querySelector('.chev').textContent = open ? '−' : '+';
+  });
+  $('list').addEventListener('change', function (ev) {
+    var c = ev.target.closest('input[data-cmp]'); if (!c) return;
+    var id = c.dataset.cmp, i = S.cmp.indexOf(id);
+    if (c.checked && i < 0) {
+      S.cmp.push(id);
+      if (S.cmp.length > 3) {
+        var drop = S.cmp.shift(), box = document.querySelector('input[data-cmp="' + drop + '"]');
+        if (box) box.checked = false;
+      }
+    } else if (!c.checked && i >= 0) { S.cmp.splice(i, 1); }
+    renderCompare();
+  });
+
+  /* ask the atlas (needs the sample capability; hidden without it) */
+  var QUESTIONS = [
+    'Which investigation should I read first for a Moon base?',
+    'Where are the gaps in this data?',
+    'How does high oxygen change the fire risk?'
+  ];
+  var ERR = {
+    rate_limited: 'Too many questions in a short time. Wait a moment, then ask again.',
+    session_expired: 'Sign in again to ask a question.',
+    refused: 'Claude could not answer that one. Try rewording the question.',
+    empty_completion: 'No answer came back. Try a shorter question.',
+    prompt_too_large: 'The question is too long. Shorten it.',
+    upstream_error: 'The answer was interrupted. Ask again.'
+  };
+  function buildPrompt(q) {
+    var order = ranked(false).map(function (x, i) { return (i + 1) + '. ' + x.e.name + ' (' + x.s + ')'; }).join('; ');
+    var lines = DATA.map(function (e) {
+      return '- ' + e.name + ' (' + e.full + ') | needs: ' + e.needs.map(function (n) { return NEEDS[n]; }).join(', ') +
+        ' | fuel: ' + e.fuelDesc + ' | objective: ' + e.objective + ' | conditions: ' + e.conditions + ' | hardware: ' + e.hardware +
+        ' | analyst ratings 0 to 3: habitat ' + e.r.h + ', atmosphere ' + e.r.a + ', modeling ' + e.r.m + ', equipment ' + e.r.c;
+    }).join('\n');
+    var w = DIMS.map(function (d) { return d.short + ' ' + S.w[d.k]; }).join(', ');
+    return 'You answer questions for an aerospace engineer using a dashboard of NASA microgravity combustion investigations for crew-habitat fire safety. ' +
+      'Use only the facts below. If the data does not cover the question, say so and suggest checking the PSI repository. ' +
+      'Ratings are analyst scores of NASA descriptions, not NASA measurements. Answer in under 160 words, plain text, no markdown, and do not invent numbers.\n\n' +
+      'Reference conditions: Earth air is 21% oxygen at 14.7 psi. A Moon base and pressurized rovers are expected at 30% oxygen or more and 10.2 psi or less. A spacesuit is 100% oxygen at 4.3 psi. ' +
+      'No partial-gravity combustion data is in PSI yet; FM2 and LUCI are planned. Rocket engine combustion is out of scope.\n' +
+      'Current weights (0 to 5): ' + w + '. Current ranking with scores: ' + order + '.\n\nInvestigations:\n' + lines + '\n\nQuestion: ' + q;
+  }
+  async function initAsk() {
+    var sample = null;
+    try { sample = await (window.claude && window.claude.use ? window.claude.use('sample') : null); } catch (e) { sample = null; }
+    if (!sample) return;
+    var sec = $('ask'), q = $('q'), ans = $('ans'), note = $('askNote'), go = $('askBtn'), stop = $('stopBtn'), ctl = null;
+    sec.hidden = false;
+    QUESTIONS.forEach(function (t) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = t;
+      b.addEventListener('click', function () { q.value = t; q.focus(); });
+      $('chips').appendChild(b);
+    });
+    function busy(on) { go.disabled = on; stop.hidden = !on; }
+    stop.addEventListener('click', function () { if (ctl) ctl.abort(); });
+    go.addEventListener('click', async function () {
+      var text = q.value.trim(); if (!text) { note.textContent = 'Type a question first.'; return; }
+      note.textContent = ''; ans.textContent = 'Thinking…'; busy(true);
+      ctl = new AbortController();
+      try {
+        var r = await sample(buildPrompt(text), { signal: ctl.signal, onText: function (u) { ans.textContent = u.text; } });
+        if (r.truncated) note.textContent = 'The answer was cut short. Ask for less at a time.';
+      } catch (e) {
+        ans.textContent = (e && e.text) || '';
+        if (e && e.code !== 'cancelled') note.textContent = ERR[e.code] || ERR.upstream_error;
+        if (e && (e.code === 'not_granted' || e.code === 'sampling_disabled' || e.code === 'not_declared' || e.code === 'capability_disabled' || e.code === 'capability_removed')) sec.hidden = true;
+      } finally { busy(false); }
+    });
+  }
+
+  setPreset('moon');
+  buildControls();
+  syncControls();
+  render();
+  initAsk();
+})();
+</script>
